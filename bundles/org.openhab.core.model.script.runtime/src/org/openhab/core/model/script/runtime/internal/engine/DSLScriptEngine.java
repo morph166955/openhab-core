@@ -67,7 +67,7 @@ public class DSLScriptEngine implements javax.script.ScriptEngine {
 
     private final org.openhab.core.model.script.engine.ScriptEngine scriptEngine;
     private final @Nullable DSLScriptContextProvider contextProvider;
-    private final ScriptContext context = new SimpleScriptContext();
+    private @Nullable ScriptContext context = null;
 
     private @Nullable Script parsedScript;
 
@@ -132,6 +132,7 @@ public class DSLScriptEngine implements javax.script.ScriptEngine {
         } catch (ScriptExecutionException | ScriptParsingException e) {
             // in case of error, drop the cached script to make sure, it is re-resolved.
             parsedScript = null;
+	    context = null;
             throw new ScriptException(e.getMessage(), modelName, -1);
         }
     }
@@ -161,7 +162,7 @@ public class DSLScriptEngine implements javax.script.ScriptEngine {
             }
         }
         // now add specific implicit vars, where we have to map the right content
-        Object value = context.getAttribute(OUTPUT_EVENT);
+        Object value = getContext().getAttribute(OUTPUT_EVENT);
         if (value instanceof ChannelTriggeredEvent) {
             ChannelTriggeredEvent event = (ChannelTriggeredEvent) value;
             evalContext.newValue(QualifiedName.create(ScriptJvmModelInferrer.VAR_RECEIVED_EVENT), event.getEvent());
@@ -216,6 +217,9 @@ public class DSLScriptEngine implements javax.script.ScriptEngine {
 
     @Override
     public ScriptContext getContext() {
+        if ( context == null ) {
+                context = new SimpleScriptContext();
+        }
         return context;
     }
 
